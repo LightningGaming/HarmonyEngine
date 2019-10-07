@@ -12,7 +12,6 @@
 
 #include <stdio.h>
 
-
 #ifdef HY_PLATFORM_GUI
 	#define HyThrottleUpdate
 #else

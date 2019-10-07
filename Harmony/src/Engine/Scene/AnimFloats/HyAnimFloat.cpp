@@ -28,6 +28,7 @@ HyAnimFloat::HyAnimFloat(float &valueReference, IHyNode &ownerRef, uint32 uiDirt
 {
 }
 
+
 HyAnimFloat::~HyAnimFloat(void)
 {
 }
@@ -191,16 +192,6 @@ HyAnimFloat &HyAnimFloat::operator/=(const float &rhs)
 	return *this;
 }
 
-HyAnimFloat &HyAnimFloat::operator=(const HyAnimFloat &rhs)
-{
-	if(m_fValueRef != rhs.Get())
-		m_OwnerRef.SetDirty(m_uiDIRTY_FLAGS);
-
-	m_fValueRef = rhs.Get();
-	StopAnim();
-
-	return *this;
-}
 
 HyAnimFloat &HyAnimFloat::operator+=(const HyAnimFloat &rhs)
 {
@@ -239,6 +230,7 @@ HyAnimFloat &HyAnimFloat::operator*=(const HyAnimFloat &rhs)
 HyAnimFloat &HyAnimFloat::operator/=(const HyAnimFloat &rhs)
 {
 	HyAssert(rhs.Get() != 0.0f, "HyAnimFloat::operator/= was passed a HyAnimFloat that == 0.0f");
+
 	if(rhs.Get() != 1.0f)
 		m_OwnerRef.SetDirty(m_uiDIRTY_FLAGS);
 

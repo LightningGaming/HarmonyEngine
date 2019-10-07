@@ -91,7 +91,7 @@ public:
 
 	uint32 TextGetNumCharacters() const;
 	uint32 TextGetNumShownCharacters() const;
-	uint32 GetNumRenderQuads();
+	uint32 GetNumRenderQuads() const;
 	float TextGetScaleBoxModifer();
 
 	glm::vec2 TextGetGlyphOffset(uint32 uiCharIndex, uint32 uiLayerIndex);

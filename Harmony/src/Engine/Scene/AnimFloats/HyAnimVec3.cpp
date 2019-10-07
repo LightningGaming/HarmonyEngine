@@ -12,21 +12,13 @@
 
 HyAnimVec3::HyAnimVec3(IHyNode &ownerRef, uint32 uiDirtyFlags)
 {
-	m_AnimFloatList = reinterpret_cast<HyAnimFloat *>(HY_NEW uint8[sizeof(HyAnimFloat) * 3]);
-	HyAnimFloat *pAnimFloatWriteLocation = m_AnimFloatList;
-
-	for(uint32 i = 0; i < 3; ++i, ++pAnimFloatWriteLocation)
-		new (pAnimFloatWriteLocation) HyAnimFloat(m_vValue[i], ownerRef, uiDirtyFlags);
+	m_AnimFloatList.push_back(HyAnimFloat(m_vValue[0], ownerRef, uiDirtyFlags));
+	m_AnimFloatList.push_back(HyAnimFloat(m_vValue[1], ownerRef, uiDirtyFlags));
+	m_AnimFloatList.push_back(HyAnimFloat(m_vValue[2], ownerRef, uiDirtyFlags));
 }
 
 HyAnimVec3::~HyAnimVec3()
-{
-	for(uint32 i = 0; i < 3; ++i)
-		m_AnimFloatList[i].~HyAnimFloat();
-
-	uint8 *pAnimFloatBuffer = reinterpret_cast<uint8 *>(m_AnimFloatList);
-	delete[] pAnimFloatBuffer;
-}
+{ }
 
 const glm::vec3 &HyAnimVec3::Get() const
 {
@@ -210,14 +202,6 @@ HyAnimVec3 &HyAnimVec3::operator/=(float rhs)
 	return *this;
 }
 
-HyAnimVec3 &HyAnimVec3::operator=(const HyAnimVec3 &rhs)
-{
-	m_AnimFloatList[0] = rhs[0];
-	m_AnimFloatList[1] = rhs[1];
-	m_AnimFloatList[2] = rhs[2];
-
-	return *this;
-}
 
 HyAnimVec3 &HyAnimVec3::operator+=(const HyAnimVec3 &rhs)
 {
@@ -252,15 +236,6 @@ HyAnimVec3 &HyAnimVec3::operator/=(const HyAnimVec3 &rhs)
 	m_AnimFloatList[1] /= rhs[1];
 	m_AnimFloatList[2] /= rhs[2];
 	
-	return *this;
-}
-
-HyAnimVec3 &HyAnimVec3::operator=(const glm::vec3 &rhs)
-{
-	m_AnimFloatList[0] = rhs[0];
-	m_AnimFloatList[1] = rhs[1];
-	m_AnimFloatList[2] = rhs[2];
-
 	return *this;
 }
 

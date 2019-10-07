@@ -119,21 +119,10 @@ int32 IHyVisable2d::GetDisplayOrder() const
 /*virtual*/ void IHyVisable2d::ResetDisplayOrder()
 {
 	m_uiExplicitAndTypeFlags &= ~EXPLICIT_DisplayOrder;
+	if(m_pParent)
+		m_pParent->SetChildrenDisplayOrder(false);
 
-	HyEntity2d *pRootParent = m_pParent;
-	while(pRootParent)
-	{
-		if(pRootParent->m_pParent)
-			pRootParent = pRootParent->m_pParent;
-		else
-			break;
-	}
-
-	if(pRootParent)
-	{
-		pRootParent->SetChildrenDisplayOrder(false);
-		HyScene::SetInstOrderingDirty();
-	}
+	HyScene::SetInstOrderingDirty();
 }
 
 /*virtual*/ void IHyVisable2d::Update() /*override*/
