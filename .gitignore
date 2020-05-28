@@ -9,6 +9,7 @@ build-HyEditor-*/
 .vs/
 GeneratedFiles/
 3rdParty/
+build/
 
 *.exe
 *.ilk
