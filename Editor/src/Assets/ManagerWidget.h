@@ -73,7 +73,7 @@ public:
 	TreeModelItemData *GetSelected(QList<AssetItemData *> &selectedItemsOut, QList<TreeModelItemData *> &selectedPrefixesOut);
 
 protected:
-	virtual void enterEvent(QEvent *pEvent) override;
+	virtual void enterEvent(QEnterEvent*pEvent) override;
 	virtual void leaveEvent(QEvent *pEvent) override;
 	virtual void resizeEvent(QResizeEvent *event) override;
 

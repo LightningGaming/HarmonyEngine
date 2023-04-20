@@ -113,6 +113,24 @@ void IHyDrawable2d::OnCalcSceneAABB()
 		shape.ComputeAABB(m_SceneAABB, GetSceneTransform(0.0f));
 }
 
+#ifdef HY_PLATFORM_GUI
+	template<typename HYDATATYPE>
+	void IHyDrawable2d::GuiOverrideData(HyJsonObj itemDataObj, bool bUseGuiOverrideName /*= true*/)
+	{
+		// TODO: THREAD SAFETY FIX! Ensure HarmonyWidget::paintGL() doesn't invoke m_pHyEngine->Update() while we delete/reallocate 'm_pData'
+		delete m_pData;
+		m_pData = HY_NEW HYDATATYPE(bUseGuiOverrideName ? HY_GUI_DATAOVERRIDE : "", itemDataObj, *IHyLoadable::sm_pHyAssets);
+		OnDataAcquired();
+
+		if (m_hShader == HY_UNUSED_HANDLE)
+			m_hShader = HyEngine::DefaultShaderHandle(GetType());
+	}
+
+	template void IHyDrawable2d::GuiOverrideData<HySpriteData>(HyJsonObj, bool);
+	template void IHyDrawable2d::GuiOverrideData<HyTextData>(HyJsonObj, bool);
+	template void IHyDrawable2d::GuiOverrideData<HySpineData>(HyJsonObj, bool);
+#endif
+
 /*virtual*/ IHyNode &IHyDrawable2d::_DrawableGetNodeRef() /*override final*/
 {
 	return *this;

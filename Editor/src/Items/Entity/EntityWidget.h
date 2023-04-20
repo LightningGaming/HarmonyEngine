@@ -16,6 +16,7 @@
 
 #include <QWidget>
 #include <QToolBar>
+#include <QActionGroup>
 
 namespace Ui {
 class EntityWidget;

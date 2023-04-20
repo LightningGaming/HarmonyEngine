@@ -30,7 +30,7 @@ EntityStateData::EntityStateData(int iStateIndex, IModel &modelRef, FileDataPair
 EntityModel::EntityModel(ProjectItemData &itemRef, const FileDataPair &itemFileDataRef) :
 	IModel(itemRef, itemFileDataRef),
 	m_EntityTypeMapper(this),
-	m_TreeModel(*this, m_ItemRef.GetName(false), itemFileDataRef.m_Meta["UUID"].toString(), this),
+	m_TreeModel(*this, m_ItemRef.GetName(false), QUuid(itemFileDataRef.m_Meta["UUID"].toString()), this),
 	m_bVertexEditMode(false)
 {
 	InitStates<EntityStateData>(itemFileDataRef);

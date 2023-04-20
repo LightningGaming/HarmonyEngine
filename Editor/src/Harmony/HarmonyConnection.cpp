@@ -67,7 +67,7 @@ void HarmonyConnection::WriteReloadPacket(QStringList &sPaths)
 	{
 		QByteArray testBuffer;
 		testBuffer.append(reinterpret_cast<const char *>(&id), sizeof(quint32));
-		testBuffer.append(sPaths[i]);
+		testBuffer.append(sPaths[i].toStdString().c_str(), sPaths[i].toStdString().size());
 		quint32 uiSize = sPaths[i].length() + sizeof(quint32) + 1;  // +1 is for null terminator
 		
 		Write(HYPACKET_ReloadItem, uiSize, testBuffer.data());

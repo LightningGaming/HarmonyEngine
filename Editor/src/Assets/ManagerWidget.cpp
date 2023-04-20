@@ -77,7 +77,7 @@ void ManagerProxyModel::FilterByBankIndex(int iBankIndex)
 		//if(pItemData->GetText().isEmpty() == false && pItemData->GetText()[0] == HyGuiInternalCharIndicator)
 		//	return false;
 
-		QRegExp searchFilter = filterRegExp();
+		QRegularExpression searchFilter = filterRegularExpression();
 
 		if(pItemData->GetType() == ITEM_Filter)
 		{
@@ -378,7 +378,7 @@ TreeModelItemData *ManagerWidget::GetSelected(QList<AssetItemData *> &selectedAs
 	return pFirstItemSelected;
 }
 
-/*virtual*/ void ManagerWidget::enterEvent(QEvent *pEvent) /*override*/
+/*virtual*/ void ManagerWidget::enterEvent(QEnterEvent *pEvent) /*override*/
 {
 	QWidget::enterEvent(pEvent);
 }

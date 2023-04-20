@@ -145,8 +145,8 @@ FileDataPair IModel::PopState(uint32 uiIndex)
 	if (role == Qt::TextAlignmentRole)
 		return Qt::AlignLeft;
 
-	if(role == Qt::DisplayRole || role == Qt::EditRole)
-		return QString::number(index.row()) % " - " % m_StateList[index.row()]->GetName();
+	if (role == Qt::DisplayRole || role == Qt::EditRole)
+		return QString(QString::number(index.row()) % " - " % m_StateList[index.row()]->GetName());
 
 	return QVariant();
 }

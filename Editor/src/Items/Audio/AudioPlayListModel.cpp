@@ -156,7 +156,7 @@ AudioPlayListItem *AudioPlayListModel::GetAudioAssetAt(int iIndex)
 			for(auto item : m_PlayList)
 				dTotal += static_cast<double>(item->GetWeight());
 			
-			return QString::number(100.0 * (static_cast<double>(pPlayListItem->GetWeight()) / dTotal), 'g', 3) % "%";
+			return QString(QString::number(100.0 * (static_cast<double>(pPlayListItem->GetWeight()) / dTotal), 'g', 3) % "%");
 		}
 		}
 	}

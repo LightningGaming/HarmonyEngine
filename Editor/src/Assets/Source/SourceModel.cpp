@@ -19,7 +19,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QMimeData>
-#include <QTextCodec>
+//#include <QTextCodec>
 
 SourceModel::SourceModel(Project &projRef) :
 	IManagerModel(projRef, ASSET_Source)

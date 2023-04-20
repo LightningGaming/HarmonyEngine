@@ -361,7 +361,7 @@ bool ExplorerModel::PasteItemSrc(const ProjectItemMimeData *pProjMimeData, const
 	if(indexRef.isValid() == false || pItem == nullptr)
 		return QAbstractItemModel::flags(indexRef);
 
-	return QAbstractItemModel::flags(indexRef) | Qt::ItemIsDropEnabled | (pItem->GetType() == ITEM_Project ? 0 : Qt::ItemIsDragEnabled);
+	return QAbstractItemModel::flags(indexRef) | Qt::ItemIsDropEnabled | (pItem->GetType() == ITEM_Project ? Qt::NoItemFlags : Qt::ItemIsDragEnabled);
 }
 
 /*virtual*/ Qt::DropActions ExplorerModel::supportedDragActions() const /*override*/

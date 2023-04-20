@@ -148,7 +148,7 @@ void ExplorerWidget::SetModel(ExplorerModel &modelRef)
 	pProxyModel->setSourceModel(&modelRef);
 
 	// Don't display anything that starts with '+'
-	pProxyModel->setFilterRegExp(QRegExp("^[^+]*$", Qt::CaseInsensitive));
+	pProxyModel->setFilterRegularExpression(QRegularExpression("^[^+]*$", QRegularExpression::PatternOption::CaseInsensitiveOption));
 	pProxyModel->setFilterKeyColumn(0);
 
 	ui->treeView->setModel(pProxyModel);

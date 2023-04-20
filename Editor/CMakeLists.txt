@@ -1,7 +1,8 @@
-#set(Qt5_DIR C:/Soft/Qt/5.12.0/msvc2017_64/lib/cmake/Qt5)
-set(Qt5_DIR "" CACHE PATH "Specify cmake Qt5 directory. Ex. C:/Qt/5.12.0/msvc2017_64/lib/cmake/Qt5")
 
-if(Qt5_DIR)
+set(Qt5_DIR "" CACHE PATH "Specify the cmake Qt directory. Ex. C:/Qt/6.5.0/msvc2019_64/lib/cmake/Qt6")
+set(Qt6_DIR "" CACHE PATH "Specify the cmake Qt directory. Ex. C:/Qt/6.5.0/msvc2019_64/lib/cmake/Qt6")
+
+if(Qt5_DIR OR Qt6_DIR)
 	add_subdirectory(vendor/freetype2)
 	set_target_properties(freetype PROPERTIES FOLDER "Editor Libs")
 	
@@ -20,7 +21,16 @@ if(Qt5_DIR)
 	set_target_properties(vorbisenc PROPERTIES FOLDER "Editor Libs")
 	set_target_properties(vorbisfile PROPERTIES FOLDER "Editor Libs")
 
-	find_package(Qt5 COMPONENTS Core Gui Network Widgets Multimedia REQUIRED)
+
+
+	set(QT_DEFAULT_MAJOR_VERSION, 6)
+	
+	find_package(Qt6 COMPONENTS Core)
+	if (NOT Qt6_FOUND)
+		find_package(Qt5 COMPONENTS Core Gui Network Widgets Multimedia REQUIRED)
+	else()
+		find_package(Qt6 COMPONENTS Core Gui Network Widgets Multimedia OpenGLWidgets REQUIRED)
+	endif()
 
 	set(HYEDITOR_SOURCE_FILES
 		src/main.cpp
@@ -280,8 +290,8 @@ if(Qt5_DIR)
 
 	set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-	include_directories(${Qt5Widgets_INCLUDES})
-	add_definitions(${Qt5Widgets_DEFINITIONS})
+	include_directories(${QtWidgets_INCLUDES})
+	add_definitions(${QtWidgets_DEFINITIONS})
 
 	add_executable(HyEditor WIN32 ${HYEDITOR_SOURCE_FILES} data/HyEditor.qrc)
 	target_include_directories(HyEditor PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -312,7 +322,12 @@ if(Qt5_DIR)
 	target_include_directories(HyEditor PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../Engine/include/Harmony")
 
 	target_compile_definitions(HyEditor PRIVATE HY_USE_QT)
-	target_link_libraries(HyEditor PUBLIC HyEngine freetype-gl ogg vorbis Qt5::Core Qt5::Gui Qt5::Network Qt5::Widgets Qt5::Multimedia)
+	
+	if(Qt5_FOUND)
+		target_link_libraries(HyEditor PUBLIC HyEngine freetype-gl ogg vorbis Qt::Core Qt::Gui Qt::Network Qt::Widgets Qt::Multimedia)
+	else()
+		target_link_libraries(HyEditor PUBLIC HyEngine freetype-gl ogg vorbis Qt::Core Qt::Gui Qt::Network Qt::Widgets Qt::Multimedia Qt::OpenGLWidgets)
+	endif()
 
 	set_target_properties(HyEditor PROPERTIES
 		CXX_STANDARD 17
@@ -323,8 +338,8 @@ if(Qt5_DIR)
 	target_precompile_headers(HyEditor PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/Shared/Global.h")
 
 	# Setup windeployqt
-	if (WIN32)
-		get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+	if (WIN32 AND Qt5_FOUND)
+		get_target_property(_qmake_executable Qt::qmake IMPORTED_LOCATION)
 		get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 		find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 		
@@ -343,5 +358,5 @@ if(Qt5_DIR)
 
 	source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "Source Files" FILES ${HYEDITOR_SOURCE_FILES})
 else()
-	message(WARNING "Required variable Qt5_DIR. Specify cmake Qt5 directory -Example- C:/Qt/5.12.0/msvc2017_64/lib/cmake/Qt5")
+	message(WARNING "Required variable Qt*_DIR. Specify either Qt5_Dir or Qt6_Dir's cmake Qt directory -Example- C:/Qt/6.5.0/msvc2019_64/lib/cmake/Qt6")
 endif()

@@ -133,7 +133,7 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 		m_pProject->SetRenderSize(w, h);
 }
 
-/*virtual*/ void HarmonyWidget::enterEvent(QEvent *pEvent) /*override*/
+/*virtual*/ void HarmonyWidget::enterEvent(QEnterEvent *pEvent) /*override*/
 {
 	this->setFocus();
 }
@@ -230,7 +230,7 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 		{
 			QJsonObject assetObj = assetsArray[i].toObject();
 
-			TreeModelItemData *pFoundAsset = m_pProject->FindItemData(assetObj["assetUUID"].toString());
+			TreeModelItemData *pFoundAsset = m_pProject->FindItemData(QUuid(assetObj["assetUUID"].toString()));
 			if(pFoundAsset)
 				assetsList.push_back(static_cast<AudioAsset *>(pFoundAsset));
 		}
@@ -251,7 +251,7 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 		{
 			QJsonObject assetObj = assetsArray[i].toObject();
 
-			TreeModelItemData *pFoundAsset = m_pProject->FindItemData(assetObj["assetUUID"].toString());
+			TreeModelItemData *pFoundAsset = m_pProject->FindItemData(QUuid(assetObj["assetUUID"].toString()));
 			if(pFoundAsset)
 				frameList.push_back(static_cast<AtlasFrame *>(pFoundAsset));
 		}

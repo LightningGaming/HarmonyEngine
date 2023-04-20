@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 
-	qRegisterMetaTypeStreamOperators<TreeModelItemData *>("TreeModelItemData *");
+	qRegisterMetaType<TreeModelItemData *>("TreeModelItemData *");
 
 	HyGlobal::Initialize();
 
