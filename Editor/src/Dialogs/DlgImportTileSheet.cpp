@@ -68,7 +68,7 @@ void DlgImportTileSheet::on_buttonBox_accepted()
 
 	quint32 uiBankId = m_ProjectRef.GetAtlasWidget() ? m_ProjectRef.GetAtlasWidget()->GetSelectedBankId() : 0;
 
-	QList<AssetItemData *> selectedAssetsList;
+	QList<IAssetItemData *> selectedAssetsList;
 	QList<TreeModelItemData *> selectedFiltersList;
 	TreeModelItemData *pFirstSelected = nullptr;
 	if(m_ProjectRef.GetAtlasWidget())
@@ -84,7 +84,7 @@ void DlgImportTileSheet::on_buttonBox_accepted()
 		correspondingUuidList.append(QUuid::createUuid());
 	}
 
-	m_ProjectRef.GetAtlasModel().ImportNewAssets(sImageImportList, uiBankId, ITEM_AtlasImage, correspondingParentList, correspondingUuidList);
+	m_ProjectRef.GetAtlasModel().ImportNewAssets(sImageImportList, uiBankId, ITEM_AtlasFrame, correspondingParentList, correspondingUuidList);
 }
 
 void DlgImportTileSheet::on_btnImageBrowse_clicked()

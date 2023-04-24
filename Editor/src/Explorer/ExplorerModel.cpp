@@ -59,7 +59,7 @@ QStringList ExplorerModel::GetPrefixList(Project *pProject)
 	return sReturnPrefixList;
 }
 
-ExplorerItemData *ExplorerModel::FindItemByItemPath(Project *pProject, QString sPath, HyGuiItemType eType)
+ExplorerItemData *ExplorerModel::FindItemByItemPath(Project *pProject, QString sPath, ItemType eType)
 {
 	QModelIndex sourceIndex = FindIndexByItemPath(pProject, sPath, eType);
 	TreeModelItem *pSourceTreeItem = GetItem(sourceIndex);
@@ -92,7 +92,7 @@ Project *ExplorerModel::AddProject(const QString sNewProjectFilePath)
 	//pNewLoadThread->start();
 }
 
-ExplorerItemData *ExplorerModel::AddItem(Project *pProj, HyGuiItemType eNewItemType, const QString sPrefix, const QString sName, FileDataPair initItemFileData, bool bIsPendingSave)
+ExplorerItemData *ExplorerModel::AddItem(Project *pProj, ItemType eNewItemType, const QString sPrefix, const QString sName, FileDataPair initItemFileData, bool bIsPendingSave)
 {
 	if(pProj == nullptr)
 	{
@@ -202,7 +202,7 @@ bool ExplorerModel::PasteItemSrc(const ProjectItemMimeData *pProjMimeData, const
 	{
 		QJsonObject pasteObj = pasteArray[iPasteIndex].toObject();
 
-		HyGuiItemType ePasteItemType = HyGlobal::GetTypeFromString(pasteObj["type"].toString());
+		ItemType ePasteItemType = HyGlobal::GetTypeFromString(pasteObj["type"].toString());
 
 		// If paste item is already in the destination project, just simply move it to new location
 		if(pasteObj["project"].toString().toLower() == pDestProject->GetAbsPath().toLower())
@@ -238,11 +238,13 @@ bool ExplorerModel::PasteItemSrc(const ProjectItemMimeData *pProjMimeData, const
 		if(pasteObj["isPrefix"].toBool())
 			continue;
 		
-		for(int iAssetCount = 0; iAssetCount < NUMASSETTYPES; ++iAssetCount)
+		for(int iAssetType = 0; iAssetType < NUM_ASSETMANTYPES; ++iAssetType)
 		{
-			QJsonArray assetArray = pasteObj[HyGlobal::AssetName(static_cast<AssetType>(iAssetCount))].toArray();
-			if(pDestProject->PasteAssets(ePasteItemType, assetArray, static_cast<AssetType>(iAssetCount)) == false)
-				HyGuiLog("Paste failed to import assets of type: " % QString::number(iAssetCount), LOGTYPE_Error);
+			AssetManagerType eAssetType = static_cast<AssetManagerType>(iAssetType);
+
+			QJsonArray assetArray = pasteObj[HyGlobal::AssetName(eAssetType)].toArray();
+			if(pDestProject->PasteAssets(ePasteItemType, assetArray, eAssetType) == false)
+				HyGuiLog("Paste failed to import assets of type: " % HyGlobal::AssetName(eAssetType), LOGTYPE_Error);
 		}
 		
 		// Import any missing fonts (.ttf)
@@ -298,9 +300,9 @@ bool ExplorerModel::PasteItemSrc(const ProjectItemMimeData *pProjMimeData, const
 																			sName,
 																			initFileItemData,
 																			false));
-		
+		pImportedProjItem->LoadModel();
 		if(pImportedProjItem->Save(true) == false)
-			return false;
+			HyGuiLog("Paste failed to save item: " % sItemPath, LOGTYPE_Error);
 	}
 
 	return true;
@@ -486,7 +488,7 @@ TreeModelItem *ExplorerModel::FindPrefixTreeItem(const QModelIndex &indexRef) co
 	return pTreeItem;
 }
 
-QModelIndex ExplorerModel::FindIndexByItemPath(Project *pProject, QString sPath, HyGuiItemType eType)
+QModelIndex ExplorerModel::FindIndexByItemPath(Project *pProject, QString sPath, ItemType eType)
 {
 	TreeModelItem *pCurTreeItem = FindProjectTreeItem(pProject);
 	if(pCurTreeItem == nullptr)

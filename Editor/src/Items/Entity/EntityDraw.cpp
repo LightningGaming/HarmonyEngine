@@ -61,8 +61,14 @@ EntityDraw::EntityDraw(ProjectItemData *pProjItem, const FileDataPair &initFileD
 				if(m_pCurVertexEditItem->GetShapeCtrl().TransformVemVerts(ShapeCtrl::VEMACTION_RemoveSelected, glm::vec2(), glm::vec2(), m_pCamera) == false)
 					return;
 
+				int iStateIndex = 0;
+				if(m_pProjItem->GetWidget() == nullptr)
+					HyGuiLog("EntityDraw::OnKeyPressEvent - m_pProjItem->GetWidget() is nullptr", LOGTYPE_Error);
+				else
+					iStateIndex = m_pProjItem->GetWidget()->GetCurStateIndex();
+
 				EntityTreeItemData *pTreeItemData = static_cast<EntityModel *>(m_pProjItem->GetModel())->GetTreeModel().FindTreeItemData(m_pCurVertexEditItem->GetThisUuid());
-				QUndoCommand *pCmd = new EntityUndoCmd_ShapeData(*m_pProjItem, pTreeItemData, ShapeCtrl::VEMACTION_RemoveSelected, m_pCurVertexEditItem->GetShapeCtrl().SerializeVemVerts(m_pCamera));
+				QUndoCommand *pCmd = new EntityUndoCmd_ShapeData(*m_pProjItem, iStateIndex, pTreeItemData, ShapeCtrl::VEMACTION_RemoveSelected, m_pCurVertexEditItem->GetShapeCtrl().SerializeVemVerts(m_pCamera));
 				m_pProjItem->GetUndoStack()->push(pCmd);
 			}
 		}
@@ -194,7 +200,7 @@ void EntityDraw::ActivateVemOnNextJsonMeta()
 void EntityDraw::SetShapeEditVertex()
 {
 	if(m_SelectedItemList.count() != 1 ||
-	  (m_SelectedItemList[0]->GetGuiType() != ITEM_Primitive && m_SelectedItemList[0]->GetGuiType() != ITEM_Shape))
+	  (m_SelectedItemList[0]->GetGuiType() != ITEM_Primitive && m_SelectedItemList[0]->GetGuiType() != ITEM_BoundingVolume))
 	{
 		HyGuiLog("EntityDraw::SetShapeEditVertex() invoked when selection is invalid", LOGTYPE_Error);
 		return;
@@ -248,38 +254,59 @@ void EntityDraw::ClearShapeEdit()
 
 	QJsonArray childArray = itemMetaObj["childList"].toArray();
 	QJsonArray shapeArray = itemMetaObj["shapeList"].toArray();
+	
+	QJsonObject stateObj = itemMetaObj["stateArray"].toArray()[m_pProjItem->GetWidget()->GetCurStateIndex()].toObject();
+	QJsonArray propChildArray = stateObj["propChildList"].toArray();
+	QJsonArray propShapeArray = stateObj["propShapeList"].toArray();
 
 	// Pull out all the valid json objects that represent items in the entity
-	QList<QJsonObject> itemObjectList;
+	QList<QJsonObject> descObjList;
+	QList<QJsonObject> propObjList;
 	for(int32 i = 0; i < childArray.size(); ++i)
 	{
 		if(childArray[i].isObject())
-			itemObjectList.push_back(childArray[i].toObject());
+		{
+			descObjList.push_back(childArray[i].toObject());
+			propObjList.push_back(propChildArray[i].toObject());
+		}
 		else if(childArray[i].isArray())
 		{
 			QJsonArray arrayFolder = childArray[i].toArray();
+			QJsonArray arrayPropFolder = propChildArray[i].toArray();
 			for(int32 j = 0; j < arrayFolder.size(); ++j)
-				itemObjectList.push_back(arrayFolder[j].toObject());
+			{
+				descObjList.push_back(arrayFolder[j].toObject());
+				propObjList.push_back(arrayPropFolder[j].toObject());
+			}
 		}
 	}
 	for(int32 i = 0; i < shapeArray.size(); ++i)
 	{
 		if(shapeArray[i].isObject())
-			itemObjectList.push_back(shapeArray[i].toObject());
+		{
+			descObjList.push_back(shapeArray[i].toObject());
+			propObjList.push_back(propShapeArray[i].toObject());
+		}
 		else if(shapeArray[i].isArray())
 		{
 			QJsonArray arrayFolder = shapeArray[i].toArray();
+			QJsonArray arrayPropFolder = propShapeArray[i].toArray();
 			for(int32 j = 0; j < arrayFolder.size(); ++j)
-				itemObjectList.push_back(arrayFolder[j].toObject());
+			{
+				descObjList.push_back(arrayFolder[j].toObject());
+				propObjList.push_back(arrayPropFolder[j].toObject());
+			}
 		}
 	}
+	if(descObjList.size() != propObjList.size())
+		HyGuiLog("EntityDraw::OnApplyJsonMeta() - descObjList.size() != propObjList.size()", LOGTYPE_Error);
 
-	for(int32 i = 0; i < itemObjectList.size(); ++i)
+	for(int32 i = 0; i < descObjList.size(); ++i)
 	{
-		QJsonObject childObj = itemObjectList[i];
-		HyGuiItemType eType = HyGlobal::GetTypeFromString(childObj["itemType"].toString());
-		QUuid uuid(childObj["Common"].toObject()["UUID"].toString());
-		bool bSelected = childObj["isSelected"].toBool();
+		QJsonObject descObj = descObjList[i];
+		ItemType eType = HyGlobal::GetTypeFromString(descObj["itemType"].toString());
+		QUuid uuid(descObj["UUID"].toString());
+		bool bSelected = descObj["isSelected"].toBool();
 
 		EntityDrawItem *pItemWidget = nullptr;
 		for(EntityDrawItem *pStaleItem : staleItemList)
@@ -292,7 +319,7 @@ void EntityDraw::ClearShapeEdit()
 		}
 		if(pItemWidget == nullptr)
 		{
-			QUuid itemUuid(childObj["itemUUID"].toString());
+			QUuid itemUuid(descObj["itemUUID"].toString());
 			pItemWidget = new EntityDrawItem(m_pProjItem->GetProject(), eType, uuid, itemUuid, this);
 		}
 		else
@@ -306,7 +333,7 @@ void EntityDraw::ClearShapeEdit()
 		else
 			pItemWidget->HideTransformCtrl();
 
-		pItemWidget->RefreshJson(childObj, m_pCamera);
+		pItemWidget->RefreshJson(descObj, propObjList[i], m_pCamera);
 	}
 	
 	// Delete all the remaining stale items
@@ -840,7 +867,7 @@ void EntityDraw::DoMouseMove_Transform(bool bCtrlMod, bool bShiftMod)
 	// This updates the preview of a shape (its 'outline') when being transformed
 	for(EntityDrawItem *pSelectedItem : m_SelectedItemList)
 	{
-		if(pSelectedItem->GetGuiType() == ITEM_Shape)
+		if(pSelectedItem->GetGuiType() == ITEM_BoundingVolume)
 			pSelectedItem->GetShapeCtrl().Setup(pSelectedItem->GetShapeCtrl().GetShapeType(), ENTCOLOR_Shape, 0.7f, 0.0f);
 	}
 
@@ -859,8 +886,14 @@ void EntityDraw::DoMouseRelease_Transform()
 		treeItemDataList.push_back(pTreeItemData);
 	}
 
+	int iStateIndex = 0;
+	if(m_pProjItem->GetWidget() == nullptr)
+		HyGuiLog("EntityDraw::DoMouseRelease_Transform - m_pProjItem->GetWidget() is nullptr", LOGTYPE_Error);
+	else
+		iStateIndex = m_pProjItem->GetWidget()->GetCurStateIndex();
+
 	// Transferring the children in 'm_ActiveTransform' back into *this will be done automatically in OnApplyJsonMeta()
-	QUndoCommand *pCmd = new EntityUndoCmd_Transform(*m_pProjItem, treeItemDataList, newTransformList, m_PrevTransformList);
+	QUndoCommand *pCmd = new EntityUndoCmd_Transform(*m_pProjItem, iStateIndex, treeItemDataList, newTransformList, m_PrevTransformList);
 	m_pProjItem->GetUndoStack()->push(pCmd);
 
 	// Reset 'm_ActiveTransform' to prep for the next transform
@@ -1000,7 +1033,13 @@ void EntityDraw::DoMouseRelease_ShapeEdit(bool bCtrlMod, bool bShiftMod)
 		{
 			EntityTreeItemData *pTreeItemData = static_cast<EntityModel *>(m_pProjItem->GetModel())->GetTreeModel().FindTreeItemData(m_pCurVertexEditItem->GetThisUuid());
 
-			QUndoCommand *pCmd = new EntityUndoCmd_ShapeData(*m_pProjItem, pTreeItemData, m_eCurVemAction, m_pCurVertexEditItem->GetShapeCtrl().SerializeVemVerts(m_pCamera));
+			int iStateIndex = 0;
+			if(m_pProjItem->GetWidget() == nullptr)
+				HyGuiLog("EntityDraw::DoMouseRelease_ShapeEdit - m_pProjItem->GetWidget() is nullptr", LOGTYPE_Error);
+			else
+				iStateIndex = m_pProjItem->GetWidget()->GetCurStateIndex();
+
+			QUndoCommand *pCmd = new EntityUndoCmd_ShapeData(*m_pProjItem, iStateIndex, pTreeItemData, m_eCurVemAction, m_pCurVertexEditItem->GetShapeCtrl().SerializeVemVerts(m_pCamera));
 			m_pProjItem->GetUndoStack()->push(pCmd);
 		}
 

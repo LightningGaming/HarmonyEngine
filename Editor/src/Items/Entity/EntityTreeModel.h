@@ -33,16 +33,16 @@ class EntityTreeItemData : public TreeModelItemData
 {
 	Q_OBJECT
 
+	EntityModel &										m_EntityModelRef;
 	EntityItemType										m_eEntType;
 	bool												m_bIsForwardDeclared;
 	QUuid												m_ItemUuid;
 
-	PropertiesTreeModel									m_PropertiesTreeModel;
 	bool												m_bIsSelected;
 
 public:
-	EntityTreeItemData(ProjectItemData &entityItemDataRef, bool bIsForwardDeclared, QString sCodeName, HyGuiItemType eItemType, EntityItemType eEntType, QUuid uuidOfItem, QUuid uuidOfThis);
-	EntityTreeItemData(ProjectItemData &entityItemDataRef, bool bIsForwardDeclared, QJsonObject initObj, bool bIsArrayItem);
+	EntityTreeItemData(EntityModel &entityModelRef, bool bIsForwardDeclared, QString sCodeName, ItemType eItemType, EntityItemType eEntType, QUuid uuidOfItem, QUuid uuidOfThis);
+	EntityTreeItemData(EntityModel &entityModelRef, bool bIsForwardDeclared, QJsonObject descObj, QJsonArray propArray, bool bIsArrayItem);
 	virtual ~EntityTreeItemData();
 
 	EntityItemType GetEntType() const;
@@ -50,15 +50,13 @@ public:
 	const QUuid &GetThisUuid() const;
 	const QUuid &GetItemUuid() const;
 	bool IsForwardDeclared() const;
-	PropertiesTreeModel &GetPropertiesModel();
+
+	PropertiesTreeModel &GetPropertiesModel(int iStateIndex);
 
 	bool IsSelected() const;
 	void SetSelected(bool bIsSelected);
 
-	void InsertJsonInfo(QJsonObject &childObjRef);
-
-protected:
-	void InitalizePropertiesTree();
+	void InsertJsonInfo_Desc(QJsonObject &childObjRef);
 };
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class EntityTreeModel : public ITreeModel
@@ -92,8 +90,8 @@ public:
 
 	bool IsItemValid(TreeModelItemData *pItem, bool bShowDialogsOnFail) const;
 	EntityTreeItemData *Cmd_InsertNewChild(ProjectItemData *pProjItem, QString sCodeNamePrefix, int iRow = -1);
-	EntityTreeItemData *Cmd_InsertNewChild(AssetItemData *pAssetItem, QString sCodeNamePrefix, int iRow = -1);
-	EntityTreeItemData *Cmd_InsertNewItem(QJsonObject initObj, bool bIsArrayItem, int iRow = -1);
+	EntityTreeItemData *Cmd_InsertNewAsset(IAssetItemData *pAssetItem, QString sCodeNamePrefix, int iRow = -1);
+	EntityTreeItemData *Cmd_InsertNewItem(QJsonObject descObj, QJsonArray propArray, bool bIsArrayItem, int iRow = -1);
 	EntityTreeItemData *Cmd_InsertNewShape(EditorShape eShape, QString sData, bool bIsPrimitive, QString sCodeNamePrefix, int iRow = -1);
 	bool Cmd_ReaddChild(EntityTreeItemData *pItem, int iRow);
 	int32 Cmd_PopChild(EntityTreeItemData *pItem);
@@ -109,7 +107,7 @@ protected:
 	bool ShouldForwardDeclare(ProjectItemData *pProjItem);
 	bool ShouldForwardDeclare(const QJsonObject &initObj);
 
-	bool FindOrCreateArrayFolder(TreeModelItem *&pParentTreeItemOut, QString sCodeName, HyGuiItemType eItemType, int iRowToCreateAt); // 'pParentTreeItemOut' must point to either Root or BvFolder, it will be reassigned to the ArrayFolder that is either found (return true), or newly created (return false)
+	bool FindOrCreateArrayFolder(TreeModelItem *&pParentTreeItemOut, QString sCodeName, ItemType eItemType, int iRowToCreateAt); // 'pParentTreeItemOut' must point to either Root or BvFolder, it will be reassigned to the ArrayFolder that is either found (return true), or newly created (return false)
 };
 
 #endif // ENTITYTREEMODEL_H

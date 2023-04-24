@@ -182,7 +182,7 @@ EntityWidget::~EntityWidget()
 		bool bAllArrayItems = true;
 
 		QModelIndex parentIndex = selectedIndices.at(0).parent();
-		HyGuiItemType eType = ui->nodeTree->model()->data(selectedIndices[0], Qt::UserRole).value<EntityTreeItemData *>()->GetType();
+		ItemType eType = ui->nodeTree->model()->data(selectedIndices[0], Qt::UserRole).value<EntityTreeItemData *>()->GetType();
 		for(const QModelIndex &index : selectedIndices)
 		{
 			if(index.parent() != parentIndex)
@@ -200,12 +200,12 @@ EntityWidget::~EntityWidget()
 		ui->actionOrderChildrenUp->setEnabled(bSelectedHaveSameParent);
 		ui->actionOrderChildrenDown->setEnabled(bSelectedHaveSameParent);
 
-		if(bRootOrBvFolder == false && selectedIndices.size() == 1 && (eType == ITEM_Primitive || eType == ITEM_Shape))
+		if(bRootOrBvFolder == false && selectedIndices.size() == 1 && (eType == ITEM_Primitive || eType == ITEM_BoundingVolume))
 		{
 			ui->actionConvertShape->setEnabled(true);
 			if(eType == ITEM_Primitive)
 			{
-				ui->actionConvertShape->setIcon(HyGlobal::ItemIcon(ITEM_Shape, SUBICON_None));
+				ui->actionConvertShape->setIcon(HyGlobal::ItemIcon(ITEM_BoundingVolume, SUBICON_None));
 				ui->actionConvertShape->setText("Convert Shape to Bounding Volume");
 			}
 			else
@@ -278,10 +278,10 @@ EntityWidget::~EntityWidget()
 			ui->lblSelectedItemText->setVisible(true);
 			ui->lblSelectedItemText->setText(pEntTreeItemData->GetCodeName() % " Properties");
 
-			PropertiesTreeModel &propModelRef = pEntTreeItemData->GetPropertiesModel();
+			PropertiesTreeModel &propModelRef = pEntTreeItemData->GetPropertiesModel(GetCurStateIndex());
 			ui->propertyTree->setModel(&propModelRef);
 
-			bEnableVemMode = (pEntTreeItemData->GetType() == ITEM_Primitive || pEntTreeItemData->GetType() == ITEM_Shape);
+			bEnableVemMode = (pEntTreeItemData->GetType() == ITEM_Primitive || pEntTreeItemData->GetType() == ITEM_BoundingVolume);
 		}
 		else
 		{
@@ -701,7 +701,7 @@ void EntityWidget::on_actionConvertShape_triggered()
 		return;
 	}
 	EntityTreeItemData *pCurItemData = ui->nodeTree->model()->data(selectedIndexList[0], Qt::UserRole).value<EntityTreeItemData *>();
-	if(pCurItemData->GetType() != ITEM_Primitive && pCurItemData->GetType() != ITEM_Shape)
+	if(pCurItemData->GetType() != ITEM_Primitive && pCurItemData->GetType() != ITEM_BoundingVolume)
 	{
 		HyGuiLog("EntityWidget::on_actionConvertShape_triggered was invoked with improper selection type", LOGTYPE_Error);
 		return;
@@ -825,12 +825,14 @@ void EntityWidget::on_actionPasteEntityItems_triggered()
 	QJsonDocument jsonDocument = QJsonDocument::fromJson(jsonData);
 	QJsonObject pastedObject = jsonDocument.object();
 
+	// Error check for correct project
 	if(m_ItemRef.GetProject().GetAbsPath().compare(pastedObject["project"].toString(), Qt::CaseInsensitive) != 0)
 	{
 		HyGuiLog("Pasted entity items originate from a different project", LOGTYPE_Warning);
 		return;
 	}
 
+	// Determine if the paste is going to be into an ArrayFolder or not
 	EntityTreeItemData *pArrayFolder = nullptr;
 	QModelIndex index = ui->nodeTree->currentIndex();
 	EntityTreeItemData *pEntTreeItemData = ui->nodeTree->model()->data(index, Qt::UserRole).value<EntityTreeItemData *>();
@@ -838,19 +840,20 @@ void EntityWidget::on_actionPasteEntityItems_triggered()
 	{
 		pArrayFolder = pEntTreeItemData;
 
-		// Needs to error check that all items on the clipboard match the type of the ArrayFolder before continuing with the paste
-		QJsonArray itemListArray = pastedObject["itemList"].toArray();
-		for(int i = 0; i < itemListArray.size(); ++i)
+		// Error check that all items on the clipboard match the type of the ArrayFolder before continuing with the paste
+		QJsonArray itemArray = pastedObject["itemArray"].toArray();
+		for(int i = 0; i < itemArray.size(); ++i)
 		{
-			QJsonObject itemObj = itemListArray[i].toObject();
-			if(HyGlobal::GetTypeFromString(itemObj["itemType"].toString()) != pArrayFolder->GetType())
+			QJsonObject itemObj = itemArray[i].toObject();
+			QJsonObject descObj = itemObj["descObj"].toObject();
+			if(HyGlobal::GetTypeFromString(descObj["itemType"].toString()) != pArrayFolder->GetType())
 			{
-				HyGuiLog("Pasted entity item " % itemObj["codeName"].toString() % " has a mismatching type of " % itemObj["itemType"].toString() % " and cannot be inserted into the array.", LOGTYPE_Warning);
+				HyGuiLog("Pasted entity item " % descObj["codeName"].toString() % " has a mismatching type of " % descObj["itemType"].toString() % " and cannot be inserted into the array.", LOGTYPE_Warning);
 				return;
 			}
 		}
 	}
 
-	EntityUndoCmd_PasteItems *pCmd = new EntityUndoCmd_PasteItems(m_ItemRef, pastedObject["itemList"].toArray(), pArrayFolder);
+	EntityUndoCmd_PasteItems *pCmd = new EntityUndoCmd_PasteItems(m_ItemRef, pastedObject, pArrayFolder);
 	m_ItemRef.GetUndoStack()->push(pCmd);
 }

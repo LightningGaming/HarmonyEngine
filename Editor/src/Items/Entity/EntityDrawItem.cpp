@@ -12,7 +12,7 @@
 #include "EntityModel.h"
 #include "MainWindow.h"
 
-EntityDrawItem::EntityDrawItem(Project &projectRef, HyGuiItemType eGuiType, QUuid uuid, QUuid itemUuid, HyEntity2d *pParent) :
+EntityDrawItem::EntityDrawItem(Project &projectRef, ItemType eGuiType, QUuid uuid, QUuid itemUuid, HyEntity2d *pParent) :
 	m_eGuiType(eGuiType),
 	m_Uuid(uuid),
 	m_ProjItemUuid(itemUuid),
@@ -22,7 +22,7 @@ EntityDrawItem::EntityDrawItem(Project &projectRef, HyGuiItemType eGuiType, QUui
 {
 	switch(m_eGuiType)
 	{
-	case ITEM_Shape:
+	case ITEM_BoundingVolume:
 	case ITEM_Primitive:
 		m_pChild = nullptr;		// When either shape or primitive 'm_pChild' is provided via the m_ShapeCtrl
 		break;
@@ -34,7 +34,7 @@ EntityDrawItem::EntityDrawItem(Project &projectRef, HyGuiItemType eGuiType, QUui
 
 	case ITEM_Entity:			m_pChild = new HyEntity2d(pParent); break;
 
-	case ITEM_AtlasImage:		//m_pChild = new HyTexturedQuad2d(); break;
+	case ITEM_AtlasFrame:		//m_pChild = new HyTexturedQuad2d(); break;
 	default:
 		HyGuiLog("EntityDrawItem ctor - unhandled child node type", LOGTYPE_Error);
 		break;
@@ -53,7 +53,7 @@ EntityDrawItem::EntityDrawItem(Project &projectRef, HyGuiItemType eGuiType, QUui
 	delete m_pChild;
 }
 
-HyGuiItemType EntityDrawItem::GetGuiType() const
+ItemType EntityDrawItem::GetGuiType() const
 {
 	return m_eGuiType;
 }
@@ -70,7 +70,7 @@ const QUuid &EntityDrawItem::GetProjItemUuid() const
 
 IHyLoadable2d *EntityDrawItem::GetHyNode()
 {
-	if(m_eGuiType == ITEM_Primitive || m_eGuiType == ITEM_Shape)
+	if(m_eGuiType == ITEM_Primitive || m_eGuiType == ITEM_BoundingVolume)
 		return &m_ShapeCtrl.GetPrimitive();
 
 	return m_pChild;
@@ -96,25 +96,25 @@ bool EntityDrawItem::IsMouseInBounds()
 	return HyEngine::Input().GetWorldMousePos(ptWorldMousePos) && boundingShape.TestPoint(transformMtx, ptWorldMousePos);
 }
 
-// NOTE: This matches how EntityTreeItemData::InitalizePropertiesTree initializes the 'm_PropertiesTreeModel'
+// NOTE: This matches how EntityStateData::InitalizePropertyModel initializes the 'PropertiesTreeModel'
 //		 Updates here should reflect to the function above
-void EntityDrawItem::RefreshJson(QJsonObject childObj, HyCamera2d *pCamera)
+void EntityDrawItem::RefreshJson(QJsonObject descObj, QJsonObject propObj, HyCamera2d *pCamera)
 {
 	if(m_eGuiType == ITEM_Prefix) // aka Shapes folder
 		return;
 
 	IHyLoadable2d *pHyNode = GetHyNode();
-	bool bIsSelected = childObj["isSelected"].toBool();
+	bool bIsSelected = descObj["isSelected"].toBool();
 
 	// Parse all and only the potential categories of the 'm_eGuiType' type, and set the values to 'pHyNode'
 	HyColor colorTint = ENTCOLOR_Shape;
-	if(m_eGuiType != ITEM_Shape)
+	if(m_eGuiType != ITEM_BoundingVolume)
 	{
-		QJsonObject commonObj = childObj["Common"].toObject();
+		QJsonObject commonObj = propObj["Common"].toObject();
 		pHyNode->SetPauseUpdate(commonObj["Update During Paused"].toBool());
 		pHyNode->SetTag(commonObj["User Tag"].toVariant().toLongLong());
 
-		QJsonObject transformObj = childObj["Transformation"].toObject();
+		QJsonObject transformObj = propObj["Transformation"].toObject();
 		QJsonArray posArray = transformObj["Position"].toArray();
 		pHyNode->pos.Set(glm::vec2(posArray[0].toDouble(), posArray[1].toDouble()));
 		pHyNode->rot.Set(transformObj["Rotation"].toDouble());
@@ -123,7 +123,7 @@ void EntityDrawItem::RefreshJson(QJsonObject childObj, HyCamera2d *pCamera)
 
 		if(m_eGuiType != ITEM_Audio && (pHyNode->GetInternalFlags() & IHyNode::NODETYPE_IsBody) != 0)
 		{
-			QJsonObject bodyObj = childObj["Body"].toObject();
+			QJsonObject bodyObj = propObj["Body"].toObject();
 			pHyNode->SetVisible(bodyObj["Visible"].toBool());
 
 			QJsonArray colorArray = bodyObj["Color Tint"].toArray();
@@ -145,16 +145,16 @@ void EntityDrawItem::RefreshJson(QJsonObject childObj, HyCamera2d *pCamera)
 		break;
 
 	case ITEM_Primitive: {
-		QJsonObject primitiveObj = childObj["Primitive"].toObject();
+		QJsonObject primitiveObj = propObj["Primitive"].toObject();
 		static_cast<HyPrimitive2d *>(pHyNode)->SetWireframe(primitiveObj["Wireframe"].toBool());
 		static_cast<HyPrimitive2d *>(pHyNode)->SetLineThickness(primitiveObj["Line Thickness"].toDouble());
 		}
 		[[fallthrough]];
-	case ITEM_Shape: {
-		QJsonObject shapeObj = childObj["Shape"].toObject();
+	case ITEM_BoundingVolume: {
+		QJsonObject shapeObj = propObj["Shape"].toObject();
 		EditorShape eShape = HyGlobal::GetShapeFromString(shapeObj["Type"].toString());
-		float fBvAlpha = (m_eGuiType == ITEM_Shape) ? 0.0f : 1.0f;
-		float fOutlineAlpha = (m_eGuiType == ITEM_Shape || bIsSelected) ? 1.0f : 0.0f;
+		float fBvAlpha = (m_eGuiType == ITEM_BoundingVolume) ? 0.0f : 1.0f;
+		float fOutlineAlpha = (m_eGuiType == ITEM_BoundingVolume || bIsSelected) ? 1.0f : 0.0f;
 
 		GetShapeCtrl().Setup(eShape, colorTint, fBvAlpha, fOutlineAlpha);
 		GetShapeCtrl().Deserialize(shapeObj["Data"].toString(), pCamera);
@@ -166,13 +166,13 @@ void EntityDrawItem::RefreshJson(QJsonObject childObj, HyCamera2d *pCamera)
 	//	break;
 
 	case ITEM_Text: {
-		QJsonObject textObj = childObj["Text"].toObject();
+		QJsonObject textObj = propObj["Text"].toObject();
 		static_cast<HyText2d *>(pHyNode)->SetState(textObj["State"].toInt());
 		static_cast<HyText2d *>(pHyNode)->SetText(textObj["Text"].toString().toStdString());
 		break; }
 
 	case ITEM_Sprite: {
-		QJsonObject spriteObj = childObj["Sprite"].toObject();
+		QJsonObject spriteObj = propObj["Sprite"].toObject();
 		static_cast<HySprite2d *>(pHyNode)->SetState(spriteObj["State"].toInt());
 		static_cast<HySprite2d *>(pHyNode)->SetFrame(spriteObj["Frame"].toInt());
 		break; }
@@ -231,9 +231,10 @@ void EntityDrawItem::RefreshOverrideData(Project &projectRef)
 
 		case ITEM_Primitive:
 		case ITEM_Audio:
-		case ITEM_AtlasImage:
+		case ITEM_AtlasFrame:
+		case ITEM_SoundClip:
 		default:
-			HyLogError("EntityDraw::ItemWidget::RefreshOverrideData - unhandled child node type");
+			HyLogError("EntityDraw::ItemWidget::RefreshOverrideData - unhandled gui item type");
 			break;
 		}
 	}
@@ -244,8 +245,8 @@ void EntityDrawItem::ExtractTransform(HyShape2d &boundingShapeOut, glm::mat4 &tr
 	transformMtxOut = glm::identity<glm::mat4>();
 	switch(GetGuiType())
 	{
-	case ITEM_Shape:
-	case ITEM_AtlasImage:
+	case ITEM_BoundingVolume:
+	case ITEM_AtlasFrame:
 	case ITEM_Primitive:
 	case ITEM_Text:
 	case ITEM_Spine:

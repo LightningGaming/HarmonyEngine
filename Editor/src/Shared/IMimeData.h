@@ -14,7 +14,7 @@
 
 #include <QMimeData>
 
-class AssetItemData;
+class IAssetItemData;
 class TreeModelItemData;
 
 class IMimeData : public QMimeData
@@ -35,7 +35,7 @@ public:
 protected:
 	virtual QVariant retrieveData(const QString &sMimeType, QMetaType type) const override;
 
-	QJsonArray MakeAssetJsonArray(Project &projRef, QList<TreeModelItemData *> assetList, AssetType eAssetType);
+	QJsonArray MakeAssetJsonArray(Project &projRef, QList<TreeModelItemData *> assetList, AssetManagerType eAssetType);
 };
 
 #endif // IMIMEDATA_H

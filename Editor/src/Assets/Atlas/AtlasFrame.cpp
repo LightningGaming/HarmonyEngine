@@ -14,7 +14,7 @@
 #include "SpineModel.h"
 
 AtlasFrame::AtlasFrame(IManagerModel &modelRef,
-					   HyGuiItemType eType,
+					   ItemType eType,
 					   QUuid uuid,
 					   quint32 uiChecksum,
 					   quint32 uiBankId,
@@ -27,7 +27,7 @@ AtlasFrame::AtlasFrame(IManagerModel &modelRef,
 					   int iY,
 					   int iTextureIndex,
 					   uint uiErrors) :
-	AssetItemData(modelRef, eType, uuid, uiChecksum, uiBankId, sName, ".png", uiErrors),
+	IAssetItemData(modelRef, eType, uuid, uiChecksum, uiBankId, sName, ".png", uiErrors),
 	m_iWidth(iW),
 	m_iHeight(iH),
 	m_rAlphaCrop(rAlphaCrop),
@@ -144,7 +144,7 @@ void AtlasFrame::ReplaceImage(QString sName, quint32 uiChecksum, QImage &newImag
 	m_iWidth = newImage.width();
 	m_iHeight = newImage.height();
 
-	if(m_eTYPE == ITEM_AtlasImage)
+	if(m_eTYPE == ITEM_AtlasFrame)
 		m_rAlphaCrop = ImagePacker::crop(newImage);
 	else // 'sub-atlases' should not be cropping their alpha because they rely on their own UV coordinates
 		m_rAlphaCrop = QRect(0, 0, newImage.width(), newImage.height());

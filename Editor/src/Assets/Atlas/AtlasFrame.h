@@ -18,7 +18,7 @@
 #include <QJsonObject>
 #include <QDataStream>
 
-class AtlasFrame : public AssetItemData
+class AtlasFrame : public IAssetItemData
 {
 	Q_OBJECT
 
@@ -36,7 +36,7 @@ class AtlasFrame : public AssetItemData
 
 public:
 	AtlasFrame(IManagerModel &modelRef,
-			   HyGuiItemType eType,
+			   ItemType eType,
 			   QUuid uuid,
 			   quint32 uiChecksum,
 			   quint32 uiBankId,

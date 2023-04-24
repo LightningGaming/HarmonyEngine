@@ -18,7 +18,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-ExplorerItemData::ExplorerItemData(Project &projectRef, HyGuiItemType eType, const QUuid &uuid, const QString sName) :
+ExplorerItemData::ExplorerItemData(Project &projectRef, ItemType eType, const QUuid &uuid, const QString sName) :
 	TreeModelItemData(eType, uuid, sName),
 	m_pProject(&projectRef)
 { }
@@ -69,6 +69,8 @@ void ExplorerItemData::Rename(QString sNewPrefix, QString sNewName)
 
 /*virtual*/ void ExplorerItemData::DeleteFromProject()
 {
+	RelinquishDependees();
+
 	if(m_pProject == nullptr)
 		return;
 

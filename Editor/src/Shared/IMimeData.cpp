@@ -52,7 +52,7 @@ MimeType IMimeData::GetMimeType() const
 	return QVariant();
 }
 
-QJsonArray IMimeData::MakeAssetJsonArray(Project &projRef, QList<TreeModelItemData *> assetList, AssetType eAssetType)
+QJsonArray IMimeData::MakeAssetJsonArray(Project &projRef, QList<TreeModelItemData *> assetList, AssetManagerType eAssetType)
 {
 	QJsonArray assetArray;
 	for(int i = 0; i < assetList.size(); ++i)
@@ -74,7 +74,7 @@ QJsonArray IMimeData::MakeAssetJsonArray(Project &projRef, QList<TreeModelItemDa
 		}
 		else
 		{
-			AssetItemData *pAssetItem = static_cast<AssetItemData *>(assetList[i]);
+			IAssetItemData *pAssetItem = static_cast<IAssetItemData *>(assetList[i]);
 
 			assetObj.insert("isFilter", false);
 			assetObj.insert("project", pAssetItem->GetProject().GetAbsPath().toLower());

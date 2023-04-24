@@ -21,7 +21,7 @@
 #include <QMimeData>
 
 AtlasModel::AtlasModel(Project &projRef) :
-	IManagerModel(projRef, ASSET_Atlas)
+	IManagerModel(projRef, ASSETMAN_Atlases)
 {
 
 }
@@ -80,7 +80,7 @@ bool AtlasModel::IsImageValid(int iWidth, int iHeight, const QJsonObject &atlasS
 	return true;
 }
 
-AtlasFrame *AtlasModel::GenerateFrame(ProjectItemData *pItem, QString sName, QImage &newImage, quint32 uiBankIndex, HyGuiItemType eType)
+AtlasFrame *AtlasModel::GenerateFrame(ProjectItemData *pItem, QString sName, QImage &newImage, quint32 uiBankIndex, ItemType eType)
 {
 	if(IsImageValid(newImage, m_BanksModel.GetBank(uiBankIndex)->GetId()) == false)
 		return nullptr;
@@ -149,7 +149,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 
 /*virtual*/ bool AtlasModel::OnBankSettingsDlg(uint uiBankIndex) /*override*/
 {
-	QList<AssetItemData *> assetList = m_BanksModel.GetBank(uiBankIndex)->m_AssetList;
+	QList<IAssetItemData *> assetList = m_BanksModel.GetBank(uiBankIndex)->m_AssetList;
 	bool bBankHasAssets = assetList.size() > 0;
 	bool bAccepted = false;
 	DlgAtlasGroupSettings *pDlg = new DlgAtlasGroupSettings(bBankHasAssets, m_BanksModel.GetBank(uiBankIndex)->m_MetaObj);
@@ -219,7 +219,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 	newMetaBankObjRef.insert("cmbHeuristic", 1);
 }
 
-/*virtual*/ AssetItemData *AtlasModel::OnAllocateAssetData(QJsonObject metaObj) /*override*/
+/*virtual*/ IAssetItemData *AtlasModel::OnAllocateAssetData(QJsonObject metaObj) /*override*/
 {
 	QRect rAlphaCrop(QPoint(metaObj["cropLeft"].toInt(), metaObj["cropTop"].toInt()),
 					 QPoint(metaObj["cropRight"].toInt(), metaObj["cropBottom"].toInt()));
@@ -248,9 +248,9 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 {
 }
 
-/*virtual*/ QList<AssetItemData *> AtlasModel::OnImportAssets(QStringList sImportAssetList, quint32 uiBankId, HyGuiItemType eType, QList<TreeModelItemData *> correspondingParentList, QList<QUuid> correspondingUuidList) /*override*/
+/*virtual*/ QList<IAssetItemData *> AtlasModel::OnImportAssets(QStringList sImportAssetList, quint32 uiBankId, ItemType eType, QList<TreeModelItemData *> correspondingParentList, QList<QUuid> correspondingUuidList) /*override*/
 {
-	QList<AssetItemData *> returnList;
+	QList<IAssetItemData *> returnList;
 
 	// Error check all the imported assets before adding them, and cancel entire import if any fail
 	QList<QImage *> newImageList;
@@ -278,7 +278,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 
 	if(returnList.empty() == false)
 	{
-		QSet<AssetItemData *> returnListAsSet(returnList.begin(), returnList.end());
+		QSet<IAssetItemData *> returnListAsSet(returnList.begin(), returnList.end());
 		AddAssetsToRepack(m_BanksModel.GetBank(GetBankIndexFromBankId(uiBankId)), returnListAsSet);
 	}
 
@@ -287,7 +287,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 	return returnList;
 }
 
-/*virtual*/ bool AtlasModel::OnRemoveAssets(QStringList sPreviousFilterPaths, QList<AssetItemData *> assetList) /*override*/
+/*virtual*/ bool AtlasModel::OnRemoveAssets(QStringList sPreviousFilterPaths, QList<IAssetItemData *> assetList) /*override*/
 {
 	QMap<BankData *, QSet<int> > repackTexIndexMap;
 	for(int i = 0; i < assetList.count(); ++i)
@@ -304,7 +304,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 	return true;
 }
 
-/*virtual*/ bool AtlasModel::OnReplaceAssets(QStringList sImportAssetList, QList<AssetItemData *> assetList) /*override*/
+/*virtual*/ bool AtlasModel::OnReplaceAssets(QStringList sImportAssetList, QList<IAssetItemData *> assetList) /*override*/
 {
 	// Error check all the replacement assets before adding them, and cancel entire replace if any fail
 	QList<QImage *> newReplacementImageList;
@@ -347,7 +347,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 	return true;
 }
 
-/*virtual*/ bool AtlasModel::OnUpdateAssets(QList<AssetItemData *> assetList) /*override*/
+/*virtual*/ bool AtlasModel::OnUpdateAssets(QList<IAssetItemData *> assetList) /*override*/
 {
 	QMap<BankData *, QSet<int> > repackTexIndexMap;
 	for(int i = 0; i < assetList.count(); ++i)
@@ -362,7 +362,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 	return true;
 }
 
-/*virtual*/ bool AtlasModel::OnMoveAssets(QList<AssetItemData *> assetsList, quint32 uiNewBankId) /*override*/
+/*virtual*/ bool AtlasModel::OnMoveAssets(QList<IAssetItemData *> assetsList, quint32 uiNewBankId) /*override*/
 {
 	// Ensure all transferred assets (images) can fit on new atlas
 	for(int i = 0; i < assetsList.count(); ++i)
@@ -380,7 +380,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 	}
 
 	QMap<uint, QSet<int> > affectedTextureIndexMap; // old
-	QSet<AssetItemData *> framesGoingToNewAtlasGrpSet; // new
+	QSet<IAssetItemData *> framesGoingToNewAtlasGrpSet; // new
 
 	for(int i = 0; i < assetsList.count(); ++i)
 	{
@@ -419,7 +419,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 		for(auto unfilledTextureIndex : unfilledTextureIndicesArray)
 			repackTexIndicesSet.insert(unfilledTextureIndex.toInt());
 
-		QSet<AssetItemData *> affectedSet(iter.value());
+		QSet<IAssetItemData *> affectedSet(iter.value());
 		for(auto *pAsset : affectedSet)
 			repackTexIndicesSet.insert(static_cast<AtlasFrame *>(pAsset)->GetTextureIndex());
 
@@ -454,7 +454,7 @@ bool AtlasModel::ReplaceFrame(AtlasFrame *pFrame, QString sName, QImage &newImag
 		QList<QJsonArray> assetArrayList;
 		QList<HyTextureInfo> textureInfoList;
 
-		QList<AssetItemData *> &entireBankAssetsListRef = m_BanksModel.GetBank(i)->m_AssetList;
+		QList<IAssetItemData *> &entireBankAssetsListRef = m_BanksModel.GetBank(i)->m_AssetList;
 		for(int j = 0; j < entireBankAssetsListRef.size(); ++j)
 		{
 			AtlasFrame *pAtlasFrame = static_cast<AtlasFrame *>(entireBankAssetsListRef[j]);
@@ -508,7 +508,7 @@ void AtlasModel::AddTexturesToRepack(BankData *pBankData, QSet<int> texIndicesSe
 	QList<int> repackTexIndicesList = texIndicesSet.values();
 
 	// Make sure all the affected frames within 'repackTexIndicesList' are added to 'AddAssetsToRepack'
-	QList<AssetItemData *> entireAssetList = pBankData->m_AssetList;
+	QList<IAssetItemData *> entireAssetList = pBankData->m_AssetList;
 	for(int i = 0; i < entireAssetList.size(); ++i)
 	{
 		AtlasFrame *pFrame = static_cast<AtlasFrame *>(entireAssetList[i]);
@@ -523,14 +523,14 @@ void AtlasModel::AddTexturesToRepack(BankData *pBankData, QSet<int> texIndicesSe
 	}
 }
 
-AtlasFrame *AtlasModel::ImportImage(QString sName, QImage &newImage, quint32 uiBankId, HyGuiItemType eType, QUuid uuid)
+AtlasFrame *AtlasModel::ImportImage(QString sName, QImage &newImage, quint32 uiBankId, ItemType eType, QUuid uuid)
 {
 	QFileInfo fileInfo(sName);
 
 	quint32 uiChecksum = HyGlobal::CRCData(0, newImage.bits(), newImage.sizeInBytes());
 
 	QRect rAlphaCrop(0, 0, newImage.width(), newImage.height());
-	if(eType == ITEM_AtlasImage) // 'sub-atlases' should not be cropping their alpha because they rely on their own UV coordinates
+	if(eType == ITEM_AtlasFrame) // 'sub-atlases' should not be cropping their alpha because they rely on their own UV coordinates
 		rAlphaCrop = ImagePacker::crop(newImage);
 
 	HyTextureInfo info(HYTEXFILTER_BILINEAR, HYTEXTURE_Uncompressed, 4, 0);

@@ -21,6 +21,8 @@
 #include "AudioUndoCmd.h"
 
 #include <QDragEnterEvent>
+#include <QGuiApplication>
+#include <QWindow>
 
 bool HarmonyWidget::sm_bHarmonyLoaded = false;
 
@@ -129,8 +131,10 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 
 /*virtual*/ void HarmonyWidget::resizeGL(int w, int h) /*override*/
 {
+	qreal fDevicePixelRatio = QGuiApplication::topLevelWindows().at(0)->devicePixelRatio();
+
 	if(m_pProject)
-		m_pProject->SetRenderSize(w, h);
+		m_pProject->SetRenderSize(w * fDevicePixelRatio, h * fDevicePixelRatio);
 }
 
 /*virtual*/ void HarmonyWidget::enterEvent(QEnterEvent *pEvent) /*override*/
@@ -167,7 +171,7 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 			if(pEvent->mimeData()->hasFormat(HyGlobal::MimeTypeString(MIMETYPE_AssetItems)))
 			{
 				const AssetMimeData *pMimeData = static_cast<const AssetMimeData *>(pEvent->mimeData());
-				if(pMimeData && pMimeData->GetNumAssetsOfType(ASSET_Audio) != 0)
+				if(pMimeData && pMimeData->GetNumAssetsOfType(ASSETMAN_Audio) != 0)
 					bIsValid = true;
 			}
 			break;
@@ -176,7 +180,7 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 			if(pEvent->mimeData()->hasFormat(HyGlobal::MimeTypeString(MIMETYPE_AssetItems)))
 			{
 				const AssetMimeData *pMimeData = static_cast<const AssetMimeData *>(pEvent->mimeData());
-				if(pMimeData && pMimeData->GetNumAssetsOfType(ASSET_Atlas) != 0)
+				if(pMimeData && pMimeData->GetNumAssetsOfType(ASSETMAN_Atlases) != 0)
 					bIsValid = true;
 			}
 			break;
@@ -224,7 +228,7 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 	{
 	case ITEM_Audio: {
 		const AssetMimeData *pMimeData = static_cast<const AssetMimeData *>(pEvent->mimeData());
-		QJsonArray assetsArray = pMimeData->GetAssetsArray(ASSET_Audio);
+		QJsonArray assetsArray = pMimeData->GetAssetsArray(ASSETMAN_Audio);
 		QList<AudioAsset *> assetsList;
 		for(int i = 0; i < assetsArray.size(); ++i)
 		{
@@ -245,7 +249,7 @@ HyRendererInterop *HarmonyWidget::GetHarmonyRenderer()
 
 	case ITEM_Sprite: {
 		const AssetMimeData *pMimeData = static_cast<const AssetMimeData *>(pEvent->mimeData());
-		QJsonArray assetsArray = pMimeData->GetAssetsArray(ASSET_Atlas);
+		QJsonArray assetsArray = pMimeData->GetAssetsArray(ASSETMAN_Atlases);
 		QList<AtlasFrame *> frameList;
 		for(int i = 0; i < assetsArray.size(); ++i)
 		{
